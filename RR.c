@@ -5,6 +5,8 @@ Non pre-epmtive version of shortest job first scheduling algorithm
 #include <stdio.h>
 #include <stdlib.h>
 
+int TIMESTAMP = 1, PROCESS_ID = 0;
+
 // The following will be a queue of a large size:
 int *queue, front=0, rear=-1;
 
@@ -13,7 +15,13 @@ void enqueue(int x) {
 }
 
 int dequeue() {
-  int x = queue[front++];
+  int x;
+  if(front <= rear) {
+    x = queue[front++];
+  } else {
+    x = -1;
+  }
+  return x;
 }
 
 void get_input(int *x, int l) {
@@ -57,35 +65,43 @@ void calc_times(
 ) {
   int i, j;
 
-  int *completion_time = (int*)calloc(n, sizeof(int));
   int *remaining_time = (int*) malloc(sizeof(int) * n);
-  int *gantt = (int*)malloc(sizeof(int) * 1000);
-  int chosen_process;
   int process_remains;
+  int time = 0;
 
-  int time_quantum = 3, k = time_quantum;
+  int time_quantum = 3; 
+  int k = time_quantum;
 
   for(i=0; i<n; i++) {
     remaining_time[i] = bt[i];
   }
 
-  enqueue(0);
-
-  for(i=0; ; i+=k) {
-    chosen_process = dequeue();
-    k = time_quantum > remaining_time[chosen_process] ? time_quantum : remaining_time[chosen_process];
-
-
-
+  while(1) {
     process_remains = 0;
-    for(j=0; j<n; j++) {
-      if(remaining_time[j] > 0) {
+    for(i=0; i<n; i++) {
+      if(remaining_time[i] > 0) {
         process_remains = 1;
-        
+        if(remaining_time[i] > time_quantum) {
+          k = time_quantum;
+          remaining_time[i] -= time_quantum;
+        } else {
+          k = remaining_time[i];
+          wt[i] = time - bt[i];
+          remaining_time[i] = 0;
+        }
+        time += k;
       }
     }
+    if(process_remains == 0) {
+      break;
+    }
+  }
+
+  for(i=0; i<n; i++) {
+    tat[i] = bt[i] + wt[i];
   }
 }
+
 
 float avg(int *arr, int n) {
   int i;
@@ -100,7 +116,7 @@ int main() {
   int *arrival_time, *burst_time, *waiting_time, *turn_around_time, *process_id;
   int i, n;
 
-  printf("SHORTEST REMAINING TIME FIRST (SRTF)\n\nEnter number of processes in queue: ");
+  printf("Round Robin Scheduling\n\nEnter number of processes in queue: ");
   scanf("%d", &n);
 
   arrival_time = (int*)malloc(sizeof(int) * n);
@@ -112,6 +128,11 @@ int main() {
   for(i=0; i<n; i++) {
     process_id[i] = i;
   }
+
+  queue = (int*)malloc(sizeof(int) * 1000);
+  // (int*)malloc(sizeof((int)avg(arrival_time, n) * n));
+  for(i=0; i<1000; i++)
+    queue[i] = -1;
 
   printf("Enter the arrival times:\n");
   get_input(arrival_time, n);
